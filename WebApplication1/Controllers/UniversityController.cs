@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using WebApplication1.Contracts;
 using WebApplication1.Data;
 using WebApplication1.Models;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
@@ -14,75 +14,63 @@ namespace WebApplication1.Controllers
     public class UniversityController : ControllerBase
     {
         private AppDbContext _context { get; set; }
+        private UniversityService universityService { get; set; }
+
         public UniversityController(AppDbContext context)
         {
             _context = context;
+            universityService = new UniversityService(_context);
         }
 
         [HttpGet]
-        [Route("Id")]
-        public IEnumerable<object> UniversityNamesAndId()
+        [Route("GetAllUniversities")]
+        public ActionResult<List<University>> GetAllUniversities()
         {
-            var universityNames = (from uni in _context.Universities
-                                select new { uni.Id, uni.Name }).ToList();
-            if (universityNames == null)
-            {
-                return null;
-            }
-            else
-            {
-                return universityNames;
-            }
-        }
-
-        [HttpGet]
-        [Route("Colleges")]
-        public async Task<IEnumerable<Object>> Get()
-        {
-            var universities = await 
-                                (from uni in _context.Universities
-
-                                    //join coll in _context.Colleges on uni.Id equals coll.Id into c
-                                    //from coll in c.DefaultIfEmpty()
-
-                                select new
-                                {
-                                    uni.Id,
-                                    uni.Name,
-                                    colleges = (from coll in _context.Colleges
-                                                where coll.UniversityId == uni.Id
-                                                select new
-                                                {
-                                                    CollegeId = coll.Id,
-                                                    CollegeName = coll.Name
-                                                }).ToList()
-                                }).ToListAsync();
-
-
-            if (universities == null)
-            {
-                return null;
-            }
-            else
-            {
-                return universities;
-            }
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<Student>> CreateUniversity(University university)
-        {
-            _context.Universities.Add(university);
             try
             {
-                await _context.SaveChangesAsync();
+                return universityService.GetAllUniversities();
+
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                return BadRequest(e);
+                return StatusCode(500, e);
+            }
+        }
+
+        
+        [HttpPost]
+        public ActionResult<Student> CreateUniversity(UniversityInput universityInput)
+        {
+
+            try
+            {
+                universityService.CreateNewUniversity(universityInput);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
 
-            return Created(nameof(Get),university);
+            return Ok();
+        }
+
+        [HttpDelete("DeleteUniversity")]
+        public IActionResult DeleteUniversity(int UniversityId)
+        {
+            try
+            {
+                var msg = universityService.DeleteUniversity(UniversityId);
+
+                if (msg.status)
+                {
+                    return Ok();
+                }
+                return NotFound(msg.message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
         }
     }
 }

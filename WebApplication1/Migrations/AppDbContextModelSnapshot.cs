@@ -19,6 +19,21 @@ namespace WebApplication1.Migrations
                 .HasAnnotation("ProductVersion", "5.0.3")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+            modelBuilder.Entity("StudentStudentCourseCollege", b =>
+                {
+                    b.Property<int>("StudentCourseAndCollegesId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("StudentCourseAndCollegesId", "StudentsId");
+
+                    b.HasIndex("StudentsId");
+
+                    b.ToTable("StudentStudentCourseCollege");
+                });
+
             modelBuilder.Entity("WebApplication1.Models.College", b =>
                 {
                     b.Property<int>("Id")
@@ -62,9 +77,10 @@ namespace WebApplication1.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int>("Name")
+                    b.Property<string>("courseName")
+                        .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(32)");
 
                     b.HasKey("Id");
 
@@ -78,9 +94,6 @@ namespace WebApplication1.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int?>("CollegeId")
-                        .HasColumnType("int");
-
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -91,24 +104,38 @@ namespace WebApplication1.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CollegeId");
-
                     b.ToTable("Students");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.StudentCourse", b =>
+            modelBuilder.Entity("WebApplication1.Models.StudentCourseCollege", b =>
                 {
-                    b.Property<int>("StudentId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int?>("CollegeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("CourseId")
+                    b.Property<int?>("CollegesCollegeId")
                         .HasColumnType("int");
 
-                    b.HasKey("StudentId");
+                    b.Property<int?>("CollegesCourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("StudentCourses");
+                    b.HasIndex("CollegesCollegeId", "CollegesCourseId");
+
+                    b.ToTable("StudentCourseColleges");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.University", b =>
@@ -124,6 +151,21 @@ namespace WebApplication1.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Universities");
+                });
+
+            modelBuilder.Entity("StudentStudentCourseCollege", b =>
+                {
+                    b.HasOne("WebApplication1.Models.StudentCourseCollege", null)
+                        .WithMany()
+                        .HasForeignKey("StudentCourseAndCollegesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebApplication1.Models.Student", null)
+                        .WithMany()
+                        .HasForeignKey("StudentsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("WebApplication1.Models.College", b =>
@@ -156,39 +198,24 @@ namespace WebApplication1.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("WebApplication1.Models.Student", b =>
+            modelBuilder.Entity("WebApplication1.Models.StudentCourseCollege", b =>
                 {
-                    b.HasOne("WebApplication1.Models.College", "College")
+                    b.HasOne("WebApplication1.Models.Course", "Courses")
                         .WithMany("Students")
-                        .HasForeignKey("CollegeId");
+                        .HasForeignKey("CourseId");
 
-                    b.Navigation("College");
-                });
+                    b.HasOne("WebApplication1.Models.CollegeCourse", "Colleges")
+                        .WithMany()
+                        .HasForeignKey("CollegesCollegeId", "CollegesCourseId");
 
-            modelBuilder.Entity("WebApplication1.Models.StudentCourse", b =>
-                {
-                    b.HasOne("WebApplication1.Models.Course", "Course")
-                        .WithMany("Students")
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Colleges");
 
-                    b.HasOne("WebApplication1.Models.Student", "Student")
-                        .WithOne("StudentCourses")
-                        .HasForeignKey("WebApplication1.Models.StudentCourse", "StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("Student");
+                    b.Navigation("Courses");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.College", b =>
                 {
                     b.Navigation("CollegeCourses");
-
-                    b.Navigation("Students");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.Course", b =>
@@ -196,11 +223,6 @@ namespace WebApplication1.Migrations
                     b.Navigation("OfferingColleges");
 
                     b.Navigation("Students");
-                });
-
-            modelBuilder.Entity("WebApplication1.Models.Student", b =>
-                {
-                    b.Navigation("StudentCourses");
                 });
 
             modelBuilder.Entity("WebApplication1.Models.University", b =>

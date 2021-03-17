@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace WebApplication1.Models
 {
@@ -12,8 +8,8 @@ namespace WebApplication1.Models
         [Required]
         [Key]
         public int CollegeId { get; set; }
-        public College College{ get; set; }
+        public College College { get; set; }
         public int CourseId { get; set; }
-        public Course Course{ get; set; }
+        public Course Course { get; set; }
     }
 }

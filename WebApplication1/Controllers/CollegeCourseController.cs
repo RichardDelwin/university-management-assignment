@@ -1,56 +1,66 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using WebApplication1.Contracts;
 using WebApplication1.Data;
-using WebApplication1.Models;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
-    [Route("/College/RegisterCourseWithCollege")]
+    [Route("CollegeCourse")]
     [ApiController]
     public class CollegeCourseController : ControllerBase
     {
         private AppDbContext _context;
+        CourseService courseService;
+
         public CollegeCourseController(AppDbContext context)
         {
             _context = context;
+            courseService = new CourseService(context);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(int CollegeId, int CourseId)
+        [HttpPost("RegisterCourseWithCollege")]
+        public IActionResult RegisterCourseWithCollege(CollegeAndCourseId collegeAndCourse)
         {
+            try
             {
-                var courseId = await _context.Courses.FindAsync(CourseId);
-                var collegeId = await _context.Colleges.FindAsync(CollegeId);
-                var collegeCourse = _context.CollegeCourses
-                    .Any(c => c.CollegeId == CollegeId && c.CourseId == CourseId);
-
-                if (courseId == null || collegeId == null)
+                var res = courseService.RegisterCourseWithCollege(collegeAndCourse);
+                if (res.status)
                 {
-                    return BadRequest();
-                }
-                else if (collegeCourse)
-                {
-                    return Ok("Course is already registered");
+                    return Ok();
                 }
                 else
                 {
-                    try
-                    {
-                        _context.CollegeCourses.Add(new CollegeCourse() { CollegeId = CollegeId, CourseId = CourseId });
-                        await _context.SaveChangesAsync();
-                        return Ok();
-                    }
-                    catch(Exception e)
-                    {
-                        return BadRequest(e);
-                    }
+                    return BadRequest(res.message);
                 }
             }
+            catch (Exception e)
+            {
+                return StatusCode(500, e);
+            }
         }
+
+        [HttpPost("DeregisterCourseWithCollege")]
+        public IActionResult DeregisterCourseWithCollege(CollegeAndCourseId collegeAndCourse)
+        {
+            try
+            {
+                var res = courseService.DeregisterCourseWithCollege(collegeAndCourse);
+                if (res.status)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest(res.message);
+                }
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e);
+            }
+        }
+
     }
 }

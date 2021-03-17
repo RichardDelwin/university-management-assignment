@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using WebApplication1.Contracts;
 using WebApplication1.Data;
 using WebApplication1.Models;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
@@ -13,87 +13,94 @@ namespace WebApplication1.Controllers
     [Route("[controller]")]
     public class CollegeController : ControllerBase
     {
-        private AppDbContext _context { get; set; }
+        private AppDbContext _context;
+        private CollegeService collegeService = null;
+
         public CollegeController(AppDbContext context)
         {
             _context = context;
+            collegeService = new CollegeService(_context);
         }
 
         [HttpGet]
-        [Route("CollegeNamesAndId")]
-        public IEnumerable<Object> GetCollegeNames()
+        [Route("GetCollegeNamesAndId")]
+        public ActionResult<List<CollegeNameId>> GetCollegeNames()
         {
-            var colleges = (from c in _context.Colleges
-                              select new { c.Name, c.Id}).ToList();
-            if (colleges == null)
+            try
             {
-                return null;
-            }
-            else
-            {
+                var colleges = collegeService.GetAllCollegeNamesId();
+                if (colleges == null)
+                {
+                    return NotFound("No colleges are registered");
+                }
                 return colleges;
             }
+            catch (Exception e)
+            {
+                return StatusCode(500, e);
+            }
         }
 
-        //[HttpGet]
-        //public IEnumerable<College> Get()
-        //{
-        //    var colleges = (from c in _context.Colleges
-        //                    select c).ToList();
-
-        //    if (colleges == null)
-        //    {
-        //        return null;
-        //    }
-        //    else
-        //    {
-        //        return colleges;
-        //    }
-        //}
-
         [HttpGet]
-        [Route("GetCollegeandCourses")]
-        public IEnumerable<Object> GetCollegesandCourses()
+        [Route("GetAllCollegesandCourses")]
+        public ActionResult<List<CollegeAndCourse>> GetCollegesandCourses()
         {
-            var collegesAndCourses = from college in _context.Colleges
-                                     join collegecourse in _context.CollegeCourses on college.Id equals collegecourse.CollegeId
-                                     join course in _context.Courses on collegecourse.CourseId equals course.Id
-                                     where college.CollegeCourses != null
-                                     select new
-                                     {
-                                         collegeId = college.Id,
-                                         collegName = college.Name,
-                                         courseId = course.Id,
-                                         courseName = course.Name
-                                     };
+            try
+            {
+                var collegesAndCourses = collegeService.GetAllCollegesWithCourses();
 
-            if (collegesAndCourses == null)
-            {
-                return null;
+                if (collegesAndCourses == null)
+                {
+                    return NotFound("No Colleges are registered");
+                }
+
+                return collegesAndCourses;  
+
             }
-            else
+            catch (Exception e)
             {
-                return collegesAndCourses;
+                return StatusCode(500, e);
             }
         }
 
         [HttpPost]
         [Route("CreateCollege")]
-        public async Task<ActionResult<Student>> CreateCollege(College college)
+        public ActionResult<Student> CreateCollege(CollegeInput college)
         {
-            _context.Colleges.Add(college);
+
             try
             {
-                await _context.SaveChangesAsync();
+                collegeService.AddNewCollege(college);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return BadRequest(e);
             }
 
-            return Created(nameof(GetCollegeNames), college);
+            return Created(nameof(GetCollegesandCourses), college);
         }
 
+        [HttpDelete]
+        public ActionResult DeleteCollege(int CollegeId)
+        {
+            try
+            {
+                var msg = collegeService.DeleteCollege(CollegeId);
+
+                if (msg.status)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest(msg.message);
+                }
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e);
+            }
+        }
     }
 }
 
